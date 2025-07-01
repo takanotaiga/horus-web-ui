@@ -1,4 +1,4 @@
-import { Factory, FolderUp, BookImage, ChartSpline, Settings } from "lucide-react"
+import { Factory, FolderUp, BookImage, ChartSpline, Settings, Bird } from "lucide-react"
 
 import {
   Sidebar,
@@ -9,18 +9,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar"
 
 // Menu items.
 const items = [
   {
     title: "Upload",
-    url: "#",
+    url: "/upload",
     icon: FolderUp,
   },
   {
     title: "Image Gallery",
-    url: "#",
+    url: "/image-gallery",
     icon: BookImage,
   },
   {
@@ -33,16 +35,26 @@ const items = [
     url: "#",
     icon: ChartSpline,
   },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
 ]
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="none">
+    <Sidebar collapsible="icon" variant="inset">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="/">
+                <Bird className="!size-5" />
+                <span className="text-base font-semibold">Horus Inference</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Horus Actions</SidebarGroupLabel>
@@ -62,6 +74,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenuItem key="Settings">
+          <SidebarMenuButton asChild>
+            <a href="#">
+              <Settings />
+              <span>Settings</span>
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarFooter>
     </Sidebar>
   )
 }
