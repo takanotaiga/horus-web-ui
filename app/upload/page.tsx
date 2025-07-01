@@ -1,13 +1,38 @@
 "use client";
-import { useRef } from "react";
-import { TableDemo } from "@/components/data-table";
+import { useRef, useState, useEffect } from "react";
+import Cookies from "js-cookie";
+import { TableDemo, FileRecord } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { CloudUpload, RefreshCw } from "lucide-react";
 
+const COOKIE_KEY = "uploaded_files";
+
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB per chunk
+  const [files, setFiles] = useState<FileRecord[]>([]);
+  const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
   const BACKEND_URL = "http://dpc2500015.local:65304";
+
+  useEffect(() => {
+    const json = Cookies.get(COOKIE_KEY);
+    if (json) {
+      try {
+        setFiles(JSON.parse(json));
+      } catch {
+        Cookies.remove(COOKIE_KEY);
+      }
+    }
+  }, []);
+
+  const updateCookie = (
+    updater: FileRecord[] | ((prev: FileRecord[]) => FileRecord[])
+  ) => {
+    setFiles((prev) => {
+      const newFiles = typeof updater === "function" ? updater(prev) : updater;
+      Cookies.set(COOKIE_KEY, JSON.stringify(newFiles), { expires: 7 });
+      return newFiles;
+    });
+};
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
@@ -16,41 +41,65 @@ export default function Home() {
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    console.log("選択されたファイル：", file);
-    const initForm = new FormData();
-    initForm.append("filename", file.name);
-    initForm.append("content_type", file.type);
-    const initRes = await fetch(`${BACKEND_URL}/upload/initiate`, {
-      method: "POST",
-      body: initForm,
-    });
-    const { upload_id, key } = await initRes.json();
 
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const parts = [];
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const blob = file.slice(start, end);
+    const newRecord: FileRecord = {
+      filename: file.name,
+      folder: "",
+      status: "uploading",
+    };
+    const updated = [newRecord, ...files];
+    updateCookie(updated);
 
-      const partForm = new FormData();
-      partForm.append("upload_id", upload_id);
-      partForm.append("key", key);
-      partForm.append("part_number", String(i + 1));
-      partForm.append("chunk", blob, file.name);
-
-      const partRes = await fetch(`${BACKEND_URL}/upload/${upload_id}/part`, {
+    try {
+      const initForm = new FormData();
+      initForm.append("filename", file.name);
+      initForm.append("content_type", file.type);
+      const initRes = await fetch(`${BACKEND_URL}/upload/initiate`, {
         method: "POST",
-        body: partForm,
+        body: initForm,
       });
-      const { etag } = await partRes.json();
-      parts.push({ part_number: i + 1, etag });
+      const { upload_id, key } = await initRes.json();
+
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const parts: { part_number: number; etag: string }[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const blob = file.slice(start, end);
+
+        const partForm = new FormData();
+        partForm.append("upload_id", upload_id);
+        partForm.append("key", key);
+        partForm.append("part_number", String(i + 1));
+        partForm.append("chunk", blob, file.name);
+
+        const partRes = await fetch(`${BACKEND_URL}/upload/${upload_id}/part`, {
+          method: "POST",
+          body: partForm,
+        });
+        const { etag } = await partRes.json();
+        parts.push({ part_number: i + 1, etag });
+      }
+
+      await fetch(`${BACKEND_URL}/upload/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, upload_id, parts }),
+      });
+
+      // 成功なら status を done に更新
+      const doneList = updated.map(r =>
+        r.filename === file.name ? { ...r, status: "done" } : r
+      );
+      updateCookie(doneList as FileRecord[]);
+      // updateCookie(doneList);
+    } catch (err) {
+      // 失敗したら status を failed に更新
+      const failedList = updated.map(r =>
+        r.filename === file.name ? { ...r, status: "failed" } : r
+      );
+      updateCookie(failedList as FileRecord[]);
     }
-    await fetch(`${BACKEND_URL}/upload/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, upload_id, parts }),
-    });
   };
 
   return (
@@ -67,13 +116,12 @@ export default function Home() {
           <CloudUpload />
           <span>Upload file</span>
         </Button>
-
         <Button variant="secondary" size="icon" className="size-8">
-          <RefreshCw />
+          <RefreshCw onClick={() => updateCookie([...files])} />
         </Button>
       </div>
 
-      <TableDemo />
+      <TableDemo files={files} />
     </div>
   );
 }

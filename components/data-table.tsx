@@ -1,3 +1,4 @@
+// components/data-table.tsx
 import {
   Table,
   TableCell,
@@ -5,81 +6,59 @@ import {
   TableHeader,
   TableRow,
   TableBody,
-} from "@/components/ui/table"
-import { Loader2Icon } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
+} from "@/components/ui/table";
+import { Loader2Icon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
-const datasetlist = [
-  {
-    status: "uploading",
-    filename: "1.mp4",
-    folder: "hogehoge",
-  },
-  {
-    status: "failed",
-    filename: "2.mp4",
-    folder: "piyopiyo",
-  },
-  {
-    status: "preprocessing",
-    filename: "3.mp4",
-    folder: "hogehoge",
-  },
-  {
-    status: "uploading",
-    filename: "4.mp4",
-    folder: "hogehoge",
-  },
-  {
-    status: "done",
-    filename: "fuga.mp4",
-    folder: "fugafuga",
-  },
-  {
-    status: "failed",
-    filename: "piyo.mp4",
-    folder: "piyopiyo",
-  },
-] as const
+export type StatusType = "uploading" | "preprocessing" | "done" | "failed";
 
-// ステータスに応じたBadgeを返すヘルパー
-function StatusBadge({ status }: { status: typeof datasetlist[number]["status"] }) {
+export interface FileRecord {
+  filename: string;
+  folder: string;
+  status: StatusType;
+}
+
+interface TableDemoProps {
+  files: FileRecord[];
+}
+
+function StatusBadge({ status }: { status: StatusType }) {
   switch (status) {
     case "uploading":
       return (
-        <Badge variant="outline" className="text-muted-foreground px-2">
+        <Badge variant="outline" className="px-2">
           <Loader2Icon className="mr-1 h-4 w-4 animate-spin" />
           Now Uploading...
         </Badge>
-      )
+      );
     case "preprocessing":
       return (
-        <Badge variant="outline" className="text-muted-foreground px-2">
+        <Badge variant="outline" className="px-2">
           <Loader2Icon className="mr-1 h-4 w-4 animate-spin" />
-          Now Preprocessing...
+          Preprocessing...
         </Badge>
-      )
+      );
     case "done":
       return (
-        <Badge variant="outline" className="text-muted-foreground px-2">
-          <FaCheckCircle className="mr-1 h-4 w-4 fill-green-500 dark:fill-green-400" />
+        <Badge variant="outline" className="px-2">
+          <FaCheckCircle className="mr-1 h-4 w-4 fill-green-500" />
           Done
         </Badge>
-      )
+      );
     case "failed":
       return (
-        <Badge variant="outline" className="text-muted-foreground px-2">
-          <FaExclamationCircle className="mr-1 h-4 w-4 fill-red-500 dark:fill-red-400" />
+        <Badge variant="outline" className="px-2">
+          <FaExclamationCircle className="mr-1 h-4 w-4 fill-red-500" />
           Failed
         </Badge>
-      )
+      );
     default:
-      return <span>{status}</span>
+      return <span>{status}</span>;
   }
 }
 
-export function TableDemo() {
+export function TableDemo({ files }: TableDemoProps) {
   return (
     <div className="overflow-hidden rounded-lg border w-full">
       <Table>
@@ -90,19 +69,18 @@ export function TableDemo() {
             <TableHead>Saved Folder</TableHead>
           </TableRow>
         </TableHeader>
-
         <TableBody className="divide-y">
-          {datasetlist.map((data) => (
+          {files.map((data) => (
             <TableRow key={data.filename} className="hover:bg-muted/10">
               <TableCell>
                 <StatusBadge status={data.status} />
               </TableCell>
-              <TableCell >{data.filename}</TableCell>
+              <TableCell>{data.filename}</TableCell>
               <TableCell>{data.folder}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
