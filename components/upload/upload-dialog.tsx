@@ -1,5 +1,5 @@
 "use client"
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,10 +28,17 @@ export default function UploadDialog({ onUpload }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isCreateMode, setIsCreateMode] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
+  const [folderList, setfolderList] = useState<string[]>([]);
+
+  const BACKEND_URL = "http://dpc2500015.local:65304";
 
   const PREVIEW_COUNT = 3
   const previewFiles = selectedFiles.slice(0, PREVIEW_COUNT)
   const remaining = selectedFiles.length - PREVIEW_COUNT
+
+  useEffect(() => {
+    reloadFolderList();
+  }, []);
 
   const onButtonClick = () => {
     fileInputRef.current?.click()
@@ -51,6 +58,7 @@ export default function UploadDialog({ onUpload }: Props) {
       setNewFolderName("")
     }
     setIsCreateMode(!isCreateMode)
+    reloadFolderList()
   }
 
   const handleClickUpload = () => {
@@ -60,8 +68,23 @@ export default function UploadDialog({ onUpload }: Props) {
     }
   }
 
+  const reloadFolderList = async () => {
+    const initRes = await fetch(`${BACKEND_URL}/storage/folder_list`);
+    const {files} = await initRes.json()
+    setfolderList([]);
+    for(const file of files){
+      if(file != ""){
+        setfolderList(prev => [...prev, file]);
+      }
+    }
+  };
+
+  const onset = (input: string) => {
+    setNewFolderName(input)
+  };
+
   return (
-    <div className="flex flex-col items-center px-4 lg:px-6 mb-4">
+    <div className="flex flex-col items-center">
       <Button variant="outline" onClick={onButtonClick}>
         <CloudUpload />
         <span>Upload file</span>
@@ -100,7 +123,7 @@ export default function UploadDialog({ onUpload }: Props) {
                   className="w-full"
                 />
               ) : (
-                <FolderSelector />
+                <FolderSelector folders={folderList} onSet={onset} />
               )}
             </div>
 
@@ -115,7 +138,7 @@ export default function UploadDialog({ onUpload }: Props) {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isCreateMode ? "フォルダ作成" : "新規フォルダ"}</p>
+                <p>{isCreateMode ? "既存のフォルダを検索" : "フォルダ作成"}</p>
               </TooltipContent>
             </Tooltip>
           </div>

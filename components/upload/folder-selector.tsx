@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import * as React from "react"
-import { Check, ChevronsUpDown, } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   Command,
@@ -18,15 +18,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-const frameworks = [
-  { value: "next.js", label: "Next.js" },
-  { value: "sveltekit", label: "SvelteKit" },
-  { value: "nuxt.js", label: "Nuxt.js" },
-  { value: "remix", label: "Remix" },
-  { value: "astro", label: "Astro" },
-]
+interface FolderListProps {
+  folders: string[]
+  onSet: (input: string) => void
+}
 
-export function FolderSelector() {
+export function FolderSelector({ folders, onSet }: FolderListProps) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
 
@@ -39,9 +36,7 @@ export function FolderSelector() {
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {value
-            ? frameworks.find((fw) => fw.value === value)?.label
-            : "Select folder..."}
+          {value || "Select folder..."}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -51,20 +46,21 @@ export function FolderSelector() {
           <CommandList>
             <CommandEmpty>No folder found.</CommandEmpty>
             <CommandGroup>
-              {frameworks.map((framework) => (
+              {folders.map((folder, i) => (
                 <CommandItem
-                  key={framework.value}
-                  value={framework.value}
+                  key={`${folder}-${i}`}
+                  value={folder}
                   onSelect={(currentValue) => {
                     setValue(currentValue === value ? "" : currentValue)
                     setOpen(false)
+                    onSet(currentValue)
                   }}
                 >
-                  {framework.label}
+                  {folder}
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === framework.value ? "opacity-100" : "opacity-0"
+                      value === folder ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

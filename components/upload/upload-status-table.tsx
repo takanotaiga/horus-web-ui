@@ -14,6 +14,7 @@ export interface FileRecord {
     filename: string;
     folder: string;
     status: StatusType;
+    create_time: string;
 }
 
 interface UploadStatusTableProps {
@@ -26,6 +27,7 @@ export function UploadStatusTable({ files }: UploadStatusTableProps) {
       <Table>
         <TableHeader className="bg-muted sticky top-0 z-10">
           <TableRow>
+            <TableHead>Create Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>File Name</TableHead>
             <TableHead>Saved Folder</TableHead>
@@ -35,8 +37,22 @@ export function UploadStatusTable({ files }: UploadStatusTableProps) {
           {files.map((data) => (
             <TableRow key={data.id} className="hover:bg-muted/10">
               <TableCell>
+                {new Date(data.create_time)
+                  .toLocaleString("ja-JP", {
+                    timeZone: "Asia/Tokyo",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })
+                }
+              </TableCell>
+              <TableCell>
                 <StatusBadge status={data.status} />
               </TableCell>
+              {/* <TableCell>{data.status}</TableCell> */}
               <TableCell>{data.filename}</TableCell>
               <TableCell>{data.folder}</TableCell>
             </TableRow>
